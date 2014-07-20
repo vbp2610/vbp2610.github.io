@@ -1,46 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[My Octopress Blog]]></title>
+  <title><![CDATA[Vishwa's Blogs]]></title>
   <link href="http://vbp2610.github.io/atom.xml" rel="self"/>
   <link href="http://vbp2610.github.io/"/>
-  <updated>2014-07-20T16:38:04+05:30</updated>
+  <updated>2014-07-20T22:49:05+05:30</updated>
   <id>http://vbp2610.github.io/</id>
   <author>
-    <name><![CDATA[Your Name]]></name>
+    <name><![CDATA[Vbp]]></name>
     
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
   
   <entry>
-    <title type="html"><![CDATA[Eval Context]]></title>
+    <title type="html"><![CDATA[Eval Scope Chain and Execution Context]]></title>
     <link href="http://vbp2610.github.io/blog/2014/07/20/title/"/>
     <updated>2014-07-20T12:32:54+05:30</updated>
     <id>http://vbp2610.github.io/blog/2014/07/20/title</id>
-    <content type="html"><![CDATA[<p>This is a regular paragraph.</p>
+    <content type="html"><![CDATA[<p>Eval is inbuilt function to execute string as javascript in run time via directly access of javascript interpreter. There are multiple articles on the web to explain execution context of the eval. In essence, Eval use scope chain of calling function to execute. In this article, I am trying to explain it using very simple diagram and example. First I explain function scope chain and correlated it with how use calling function scope chain during execution.</p>
 
-<table>
-    <tr>
-        <td>Foo</td>
-    </tr>
-</table>
+<h6>How function scope chain work?</h6>
 
+<p><img src="http://vbp2610.github.io/images/eval/diagram1.jpg"></img>
+In above diagram there are three context 1. Global Scope chain 2. Outer Scope chain 3. Inner Scope chain. Javascript try to find out the variable from inner scope chain to Global scope chain always. Let&rsquo;s go step by step to analysis output of the program</p>
 
-<p>This is another regular paragraph.</p>
+<h6>Statement console.log(a) output</h6>
 
-<h1>This is an H1</h1>
+<p>Interpreter start search this variable in inner scope chain, since this present in inner scope that&rsquo;s why output isinner</p>
 
-<h1>This is an H1</h1>
+<h6>Statement console.log(b) output</h6>
 
-<h2>This is an H2</h2>
+<p>Interpreter start search this variable in inner scope chain, since this variable is not present in inner scope try to find it in outer scope chain. since this present in outer scope that&rsquo;s why output is outer.</p>
 
-<blockquote><p>This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
-consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
-Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.</p>
+<h6>Statement console.log&copy; output</h6>
 
-<p>Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
-id sem consectetuer libero luctus adipiscing.</p></blockquote>
+<p>interpreter doesn&rsquo;t find this variable in inner and outer scope chain that&rsquo;s why look into global scope chain. since this present in global scope that&rsquo;s why output is global</p>
+
+<p>Now it&rsquo;s important to understand what will be the output if the same output statement will be passed to eval function as shown in below diagram. which scope chained will be used by eval function</p>
+
+<p><img src="http://vbp2610.github.io/images/eval/diagram1.jpg"></img></p>
+
+<p>Wow! Surprise! still output is same whereas we are using eval to print the output. that means eval used the same scope chain which is used by the function from which eval function is called.
+in essence, Eval use the scope chain of the function from which it&rsquo;s called. in addition to that it&rsquo;s execute in window context until unless you are not using call and apply function of javascript.</p>
 ]]></content>
   </entry>
   

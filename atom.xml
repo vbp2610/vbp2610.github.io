@@ -4,7 +4,7 @@
   <title><![CDATA[Vishwa's Blogs]]></title>
   <link href="http://vbp2610.github.io/atom.xml" rel="self"/>
   <link href="http://vbp2610.github.io/"/>
-  <updated>2014-07-25T08:27:57+05:30</updated>
+  <updated>2014-07-26T15:41:30+05:30</updated>
   <id>http://vbp2610.github.io/</id>
   <author>
     <name><![CDATA[Vbp]]></name>
@@ -18,39 +18,77 @@
     <link href="http://vbp2610.github.io/blog/2014/07/25/node-debug-tools/"/>
     <updated>2014-07-25T06:13:21+05:30</updated>
     <id>http://vbp2610.github.io/blog/2014/07/25/node-debug-tools</id>
-    <content type="html"><![CDATA[<p> It should come as no surprise that Node has emerged as the technology of choice for creating web Application in recent years. <a href="http://w3techs.com/technologies/details/ws-nodejs/all/all">Recent trend</a> show it. As I always passionate to analysis different emerging technologies, I stared Node few months back and impressed the power of node in certain circumstances.</p>
+    <content type="html"><![CDATA[<p>This article explains the architecture of Node debugging tool Node Inspector. It requires basic prior knowledge of node, debugging tool node inspector and client server technology. In case you missed please Google for basic knowledge of Node.js, Node Inspector and Client/Server technologies before move further. I hope in the end, you have enough understanding how you can write your own debugger for node like eclipse, sublime text, Bracket etc.</p>
 
-<p>I analysis multiple node debug tool like sublime text, Eclipse, Node-Inspector, Bracket and decided to use Node-Inspector. I started look into documentation on web for understanding of Architecture/Design but
-Unfortunately it was missing from the Web…. As Developer Code is our destination for diving. Thanks God Node-Inspector, Chrome Web-Inspector, Remote debugging Protocol and V8 Debug Protocol are part of open community.</p>
+<p>As a developer, there always comes what you’re doing becomes so complex it makes your head spin. That time you need a real debugger to help what is going on inside your code. I used multiple debuggers without knowing internal but this time I tried to understand node inspector internal. I started searched documentation on web for Architecture/Design of any node debugger tool but unfortunately it was not there.</p>
 
-<p>It’s huge code base and as usual little bit difficult to figure out the flow of code in event driven paradigm but I had my lovable “grep command” to do that. In starting it seems to me basic Messaging between client/Server but in actual it was more that that and pretty interesting so I decided to share my understanding in my own way to make it very simple.</p>
+<p>As developer there is no way except dive into code and see what is going on. It took me few days to understand whole architecture of this tool but it was more than simple messaging between client/server under one protocol like http. Just trying to capture my finding in my own way with visual presentation.</p>
 
-<p>Just listing out different technologies used to build complete product</p>
+<p>I am assuming that you know the steps to debug a node &ldquo;hello World&rdquo; programe using Node Inspector. Now we will see all steps two start the debugging using node-inspector</p>
 
-<ol>
-<li>HTTP Client/Server</li>
-<li>Web Socket Client/Server</li>
-<li>TCP Client/Server</li>
-<li><a href="https://www.webkit.org/blog/1875/announcing-remote-debugging-protocol-v1-0/">WebKit Remote Debugging Protocol[WRDP]</a></li>
-<li><a href="https://code.google.com/p/v8/wiki/DebuggerProtocol">V8 Remote Debugging protocol[V8RDP]</a></li>
-</ol>
+<p><strong>Step 1</strong> Start inbuilt node debugger using command <strong> node &mdash;debug-brk helloworld.js</strong>
+<img src="http://vbp2610.github.io/images/node-debug-tools/start-node-debugger.png"></img>
+it&rsquo;s means node inbuild debugger server is running on port 5858.</p>
+
+<p><strong>Step 2</strong> Start node Inspector using command <strong>node-inspector</strong>
+<img src="http://vbp2610.github.io/images/node-debug-tools/start-node-inspector.png"></img>
+It&rsquo;s means node-inspector start a http server on port 8080 and passing port number 5858 on which node inspector connect to node debugger server.</p>
+
+<p><strong>Step 3</strong> open the tab in browser with URL <a href="http://127.0.0.1:8080/debug?port=5858">http://127.0.0.1:8080/debug?port=5858</a>
+<img src="http://vbp2610.github.io/images/node-debug-tools/Web-Inspector-break-point.png"></img>
+you can see breakpoint on first line inside webkit webinspector <strong>(Debugger for Webkit browser)</strong> as you ask in step1.</p>
+
+<p>So far it seems that there is message exchange happening between client <strong>(Web inspector)</strong> and Server <strong>(Node inbuilt debugger)</strong></p>
+
+<p>Obviously few questions arise in mind</p>
+
+<ul>
+<li>Is there any protocol betwenn client and server for message exchanging like http,FTP?</li>
+<li>Is Client/Server have same type of connect like TCP, HTTP, WebSocket?</li>
+<li>How message back-forth happening between client->Server and Server->Client?</li>
+<li>What is the role of node inspector module for passing these message?</li>
+</ul>
 
 
-<p>there is two main components WebKit Web-Inspector work as Client of WRDP and V8 Debugger work as Server for V8 since Client and Server know different protocols so no way to talk each other Directly. See Diagram1</p>
+<p>Definately, there are protocols under which communication is happening but Our client and Server both know different protocol. Our client Web-Inspector use <a href=https://www.webkit.org/blog/1875/announcing-remote-debugging-protocol-v1-0/ target=_blank><strong>WebKit remote debugging protocol</strong></a> and Server use <a href=https://code.google.com/p/v8/wiki/DebuggerProtocol target=_blank><strong>V8 remote debugging protocol</strong></a>. That means there is no common protocol between Client/Server then How they can talk to each other? it cleary visible in <strong>diagram1</strong></p>
 
-<p><img src="http://vbp2610.github.io/assets/node-debug-tools/diagram1.png"></img></p>
+<p><img src="http://vbp2610.github.io/images/node-debug-tools/diagram1.png"></img></p>
 
-<p>It pretty clear from above diagram we need one proxy who know both protocols and mapping of commands. For example “SetBreakPoint” both components can understand but with different parameter in JSON message. Who will changes the format of message ?  it’s Node-Inspector only who is playing the role of proxy in between both of them. See Diagram2
-<img src="http://vbp2610.github.io/assets/node-debug-tools/diagram2.png"></img></p>
+<p>Another point is Our Client is WebSocket but server is TCP. how we can pass message from websocket client to TCP server. <strong>Hmm Preety Interesting so far</strong>.</p>
 
-<p>See in above diagram that Node debugger is running TCP server but Web Inspector is working as Web Socket Client.. Ouch! What it’s means and how it will impact?</p>
+<p>It pretty understable that we need a proxy who will do following things for us</p>
 
-<p>Since Client is sending message on using WebSocket but node debugger is running TCP server, we have to run WebSocket Server and TCP client inside Proxy to pass the message with a Protocol Convertor show in the diagram3
-<img src="http://vbp2610.github.io/assets/node-debug-tools/diagram3.svg"></img></p>
+<ul>
+<li>Run WebSocket Server</li>
+<li>Run TCP Client</li>
+<li>Have mappeing between both protocol to convert message from one protocol to another protocol.</li>
+</ul>
 
-<p>Now question came in mind what is the need of HTTP Client/Server? Browser is HTTP client who is fetching Web-Inspector From HTTP server running on node-Inspector Proxy Module.</p>
 
-<p>Web Inspector form the request using WRDP and pass it to Websocket Server running on Proxy( node-inspector). WebSocket server running inside proxy and hand over the message to protocol convertor for reformat it. Protocol Convertor convert message into V8RDP and Pass it to TCP client. TCP Client send the message to V8 debugger working as TCP server. V8 execute the request and send the response to TCP Client. TCP client pass the message to Websocket client using protocol convertor and websocket Server.</p>
+<p>Who is doing above task? is it Node Inspector? Yes, You are right. Node Inspector module is play a role of proxy and doing these. see <strong>diagram 2</strong>
+<img src="http://vbp2610.github.io/images/node-debug-tools/diagram2.png"></img></p>
+
+<p>Node inspector getting message from client using web socket server and sending these message to node debugger server using tcp client after converting from one protocol to another protocol.I took one snap of this converstion on my terminal when you click on step over button in web inspector.See the diagram4
+<img src="http://vbp2610.github.io/images/node-debug-tools/converter-message.png"></img></p>
+
+<p>Now it&rsquo;s pretty clear all components of Node Inspector. let&rsquo;s try to see at granular level what happen when you click on step over in browser :</p>
+
+<p>Step1. Web inspector send the message {&ldquo;method&rdquo;:&ldquo;Debugger.stepOver&rdquo;,&ldquo;id&rdquo;:29} to websocket server which is part of node inspector using webkit remote debugging protocol.</p>
+
+<p>Step2. Node inspector use protocol converter for convert this message to remote V8 debugging protocol like below</p>
+
+<pre><code>    {"seq":14,"type":"request","command":"continue","arguments":{"stepaction":"next","maxStringLength":10000}}
+    {"seq":15,"type":"request","command":"backtrace","arguments":{"inlineRefs":true,"fromFrame":0,"toFrame":50,"maxStringLength":10000}}
+</code></pre>
+
+<p>Step3: Send step2 message to TCP server using TCP client which is part of node inspector module.</p>
+
+<p>Step3. node debugger take the action according to the message.</p>
+
+<p>it&rsquo;s time to compile all the components together inside nice diagram.
+<img src="http://vbp2610.github.io/images/node-debug-tools/diagram3.svg"></img></p>
+
+<p>I explained role of each component in node debugging flow except HTTP Client/Server. Browser is http client inside the flow to fetch web inspector application from http server which is part of node inspector to start debugging.</p>
 ]]></content>
   </entry>
   
